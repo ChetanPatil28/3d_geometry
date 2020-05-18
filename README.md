@@ -1,4 +1,3 @@
 # Visual_Odometry
 
-This project is an attempt to understand the Kitti raw dataset from their paper 
-http://www.cvlibs.net/publications/Geiger2013IJRR.pdf
+This project is an attempt to implement both, the stereo VO and monoular VO.
