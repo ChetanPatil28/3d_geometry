@@ -25,3 +25,9 @@ def hom_to_euc(points):
 	last = points[:, -1].copy()
 	points_euc = points/last[:, None]
 	return points_euc
+
+
+def P_from_krt(K, R, t):
+	Rt = np.hstack((R, t))
+	P = np.matmul(K, Rt)
+	return P
