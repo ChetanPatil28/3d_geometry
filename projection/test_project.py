@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import utils
 np.random.seed(79)
 np.set_printoptions(precision=4)
 
@@ -12,14 +12,15 @@ X_cam1 = np.asarray([10, 25, 7]).reshape(3, -1)
 
 # lets also assume Camera orientation aligns with world.
 
-thetax1, thetay1, thetaz1 = np.deg2rad(90), np.deg2rad(0), np.deg2rad(0)
-R1, _ = cv2.Rodrigues(np.asarray([thetax1, thetay1, thetaz1], dtype=np.float32))
+
+
+R1 = utils.rotate(thetax=90)
 
 # lets define a few points in the world.
 # these three points will be at +4 away in z, +5 away in y and +6 away in x
 pts = np.asarray([[10, 25, 11], [10, 30, 7], [16, 25, 7], [10, 25, 7]])
 
-pts = np.random.randint(11, 50, size=(4, 3))
+pts = np.random.randint(11, 50, size=(5, 3)) # 5-points
 
 
 # then t shall be
@@ -38,15 +39,11 @@ P1 = np.matmul(K, Ext1)
 print("Projection-Mat 1 is ", P1)
 
 
-def from_3d_to_2d(P_Mat, points_3d):
-    ones = np.ones(points_3d.shape[0]).reshape(-1, 1)
-    print("debg", ones.shape, points_3d.shape)
-    points_3d_homo = np.transpose( np.concatenate((points_3d, ones), axis = 1), axes=(1, 0) )
-    points_2d_homo = np.matmul(P_Mat, points_3d_homo)
-    return points_2d_homo
 
 
-pts_2d = from_3d_to_2d(P1, pts)
+
+
+pts_2d = utils.project(P1, pts)
 
 
 print("Finally points are ", pts_2d)
