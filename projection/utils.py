@@ -9,7 +9,6 @@ def rotate(thetax=0, thetay=0, thetaz=0):
 
 def project(P_Mat, points_3d):
     ones = np.ones(points_3d.shape[0]).reshape(-1, 1)
-    print("debg", ones.shape, points_3d.shape)
     points_3d = euc_to_hom(points_3d)
     points_3d_homo = np.transpose(points_3d, axes=(1, 0) )
     points_2d_homo = np.matmul(P_Mat, points_3d_homo).T # convert to (N, 3) by trnasposing.
@@ -31,5 +30,3 @@ def P_from_krt(K, R, t):
 	Rt = np.hstack((R, t))
 	P = np.matmul(K, Rt)
 	return P
-
-# def 

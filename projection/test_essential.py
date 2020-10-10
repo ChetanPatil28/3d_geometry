@@ -30,8 +30,8 @@ pts2d_1 = utils.hom_to_euc(pts2d_1)
 
 # This is the 2nd camera oriented and shifted to some other place.
 X_cam2 = np.asarray([10, 25, 7]).reshape(3, -1)
-R2 = utils.rotate(thetax=90)
-t2 = -R2.dot(X_cam2) # t will be R_transpose.cam-centre
+R2 = utils.rotate(thetax=49)
+t2 = -R2.dot(X_cam2) # t1 will be R_transpose.cam-centre . t2 is essentially location of cam1 wrt cam2.
 t2_norm = t2/np.linalg.norm(t2)
 
 P2 = utils.P_from_krt(K, R2, t2)
@@ -39,10 +39,10 @@ pts2d_2 = utils.project(P2, Points)
 pts2d_2 = utils.hom_to_euc(pts2d_2)
 
 Ess1, _ = cv2.findEssentialMat(pts2d_1, pts2d_2, K ,cv2.FM_RANSAC)
-R2_est1, R2_est2, t2_est = cv2.decomposeEssentialMat(Ess1) # t_est shall be a unit-vector. it wont give the legth, but only scale.
+R2_est1, R2_est2, t2_est = cv2.decomposeEssentialMat(Ess1) # t2_est shall be a unit-vector. it wont give the legth, but only dir.
 
-print("R estimated is equal ???  ", (R2-R2_est1).sum(), (R2-R2_est2).sum())
-print("Is the t equal ??? ", (t2_norm - t2_est).sum())
+print("R estimated is equal ???  ", (R2-R2_est1).sum(), np.allclose(R2, R2_est2))
+print("Is the t equal ??? ", np.allclose(t2_norm, t2_est))
 
 #### As you see above, both the `t` as well as `Rs` estimated by opencv are very close-by.
 
@@ -64,7 +64,7 @@ pts2d_3 = utils.project(P3, Points)
 pts2d_3 = utils.hom_to_euc(pts2d_3)
 
 Ess2, _ = cv2.findEssentialMat(pts2d_2, pts2d_3, K ,cv2.FM_RANSAC)
-R3_est1, R3_est2, t3_est = cv2.decomposeEssentialMat(Ess2) # t_est shall be a unit-vector. it wont give the legth, but only direction.
+R3_est1, R3_est2, t3_est = cv2.decomposeEssentialMat(Ess2) # t3_est shall be a unit-vector. it wont give the legth, but only direction.
 
 
 ## Note that these R3_est1 or R3_est2 will give you the rotation of Cam3 wrt to Cam2. (assuming that cam2 was at rotation=0).
@@ -82,13 +82,75 @@ R3_est1, R3_est2, t3_est = cv2.decomposeEssentialMat(Ess2) # t_est shall be a un
 # get the rotation-mat and verify.
 
 Ess3, _ = cv2.findEssentialMat(pts2d_1, pts2d_3, K ,cv2.FM_RANSAC)
-R13_est1, R13_est2, t3_est = cv2.decomposeEssentialMat(Ess3) # t_est shall be a unit-vector. it wont give the legth, but only direction.
+R13_est1, R13_est2, t13_est = cv2.decomposeEssentialMat(Ess3) # t_est shall be a unit-vector. it wont give the legth, but only direction.
 
 # lets see in code.
-
-# R_13 means orientation of cam3 wrt cam1. Thinkg why there is .T in the end :-)
+# R_13 means orientation of cam3 wrt cam1. Think why there is .T in the end :-)
 R_13 = np.matmul(R2_est1.T, R3_est1.T).T
-
-
 print((R13_est1 - R_13).sum())
-# As we see, the difference between both is of order 10e-8
+# As we see, the difference between both is of order 10e-8.
+
+
+
+## Brainstorm question.
+# R1 orients from Cam1 to Cam2,
+# R2 orients from Cam2 to Cam3.
+# R3 orients from Cam1 to Cam3.
+
+# U are given only R1 and R3 , find R2.
+
+# print("R2 is ", np.matmul(R3_est1, R13_est1.T), "\n", R2)
+
+
+
+
+
+#### Now, we are done with ROTATIONS. Lets now deal with TRANSLATIONS.
+ 
+
+############################################
+
+# Lets get cam-centre directions of all cameras from the estimated ts.
+
+
+Cam2_est = -R2_est1.T.dot(t2_est)
+Cam3_est = -R13_est1.T.dot(t13_est)
+print("Cam2 \n", Cam2_est, np.allclose(Cam2_est, X_cam2/np.linalg.norm(X_cam2)))
+print("Cam3 \n", Cam3_est, np.allclose(Cam3_est, X_cam3/np.linalg.norm(X_cam3)))
+
+# print("t3-est ", t3_est)
+
+
+
+
+# How do we get Cam3-direction wrt Cam2 ????? 
+# Simple vector addition. ie cam2  + cam23  = cam3.
+Cam23_est = -R2.T.dot(-R3_est1.T.dot(t3_est))
+X_cam23 = X_cam3 - X_cam2
+print("Xcam23-norm will be ", (X_cam23/np.linalg.norm(X_cam23) - Cam23_est).sum())
+
+# print("Cam3 wrt cam2 ",Cam23_est, R3_est1.dot(Cam2_est), Cam3_est - Cam2_est )
+
+
+
+# Let's see what will be the dir of Cam3 wrt Cam1.
+# It should actually be 
+
+
+# Previously we saw that, t3_est was dir-vector from Cam2 pointing towards Cam3.
+# Can we get the dir-vec of Cam2 wrt to Cam1.??? 
+# We actually know this dir-vec. This will be norm(X_cam2). 
+# But lets try to get it the other-way around.
+
+# We can get this by -R2_est.transpose * t3_est.
+
+
+
+
+
+
+
+
+
+
+
