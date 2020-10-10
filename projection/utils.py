@@ -12,7 +12,7 @@ def project(P_Mat, points_3d):
     print("debg", ones.shape, points_3d.shape)
     points_3d = euc_to_hom(points_3d)
     points_3d_homo = np.transpose(points_3d, axes=(1, 0) )
-    points_2d_homo = np.matmul(P_Mat, points_3d_homo)
+    points_2d_homo = np.matmul(P_Mat, points_3d_homo).T # convert to (N, 3) by trnasposing.
     return points_2d_homo
 
 def euc_to_hom(points): # (N, 3 or 4)
@@ -24,10 +24,12 @@ def euc_to_hom(points): # (N, 3 or 4)
 def hom_to_euc(points):
 	last = points[:, -1].copy()
 	points_euc = points/last[:, None]
-	return points_euc
+	return points_euc[:, :-1]
 
 
 def P_from_krt(K, R, t):
 	Rt = np.hstack((R, t))
 	P = np.matmul(K, Rt)
 	return P
+
+# def 
