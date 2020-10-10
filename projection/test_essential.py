@@ -30,19 +30,19 @@ pts2d_1 = utils.hom_to_euc(pts2d_1)
 
 # This is the 2nd camera oriented and shifted to some other place.
 X_cam2 = np.asarray([10, 25, 7]).reshape(3, -1)
-R2 = utils.rotate(thetax=49)
-t2 = -R2.dot(X_cam2) # t1 will be R_transpose.cam-centre . t2 is essentially location of cam1 wrt cam2.
-t2_norm = t2/np.linalg.norm(t2)
+R12 = utils.rotate(thetax=49)
+t12 = -R12.dot(X_cam2) # t1 will be R_transpose.cam-centre . t2 is essentially location of cam1 wrt cam2.
+t12_norm = t12/np.linalg.norm(t12)
 
-P2 = utils.P_from_krt(K, R2, t2)
+P2 = utils.P_from_krt(K, R12, t12)
 pts2d_2 = utils.project(P2, Points)
 pts2d_2 = utils.hom_to_euc(pts2d_2)
 
 Ess1, _ = cv2.findEssentialMat(pts2d_1, pts2d_2, K ,cv2.FM_RANSAC)
-R2_est1, R2_est2, t2_est = cv2.decomposeEssentialMat(Ess1) # t2_est shall be a unit-vector. it wont give the legth, but only dir.
+R12_est1, R12_est2, t12_est = cv2.decomposeEssentialMat(Ess1) # t2_est shall be a unit-vector. it wont give the legth, but only dir.
 
-print("R estimated is equal ???  ", (R2-R2_est1).sum(), np.allclose(R2, R2_est2))
-print("Is the t equal ??? ", np.allclose(t2_norm, t2_est))
+print("R estimated is equal ???  ", (R12-R12_est1).sum(), np.allclose(R12, R12_est2))
+print("Is the t equal ??? ", np.allclose(t12_norm, t12_est))
 
 #### As you see above, both the `t` as well as `Rs` estimated by opencv are very close-by.
 
@@ -54,17 +54,17 @@ print("Is the t equal ??? ", np.allclose(t2_norm, t2_est))
 ## Except that these R  and t will be the ones wrt the first-camera.
 
 
-X_cam3 = np.asarray([15, 25, 10]).reshape(3, -1)
-R3 = utils.rotate(thetay=68)
-t3 = -R3.dot(X_cam3) # t will be R_transpose.cam-centre
-t3_norm = t3/np.linalg.norm(t3)
+X_cam3 = np.asarray([15, 25, 9]).reshape(3, -1)
+R13 = utils.rotate(thetay=68)
+t13 = -R13.dot(X_cam3) # t will be R_transpose.cam-centre
+t13_norm = t13/np.linalg.norm(t13)
 
-P3 = utils.P_from_krt(K, R3, t3)
+P3 = utils.P_from_krt(K, R13, t13)
 pts2d_3 = utils.project(P3, Points)
 pts2d_3 = utils.hom_to_euc(pts2d_3)
 
 Ess2, _ = cv2.findEssentialMat(pts2d_2, pts2d_3, K ,cv2.FM_RANSAC)
-R3_est1, R3_est2, t3_est = cv2.decomposeEssentialMat(Ess2) # t3_est shall be a unit-vector. it wont give the legth, but only direction.
+R23_est1, R23_est2, t23_est = cv2.decomposeEssentialMat(Ess2) # t3_est shall be a unit-vector. it wont give the legth, but only direction.
 
 
 ## Note that these R3_est1 or R3_est2 will give you the rotation of Cam3 wrt to Cam2. (assuming that cam2 was at rotation=0).
@@ -86,20 +86,26 @@ R13_est1, R13_est2, t13_est = cv2.decomposeEssentialMat(Ess3) # t_est shall be a
 
 # lets see in code.
 # R_13 means orientation of cam3 wrt cam1. Think why there is .T in the end :-)
-R_13 = np.matmul(R2_est1.T, R3_est1.T).T
-print((R13_est1 - R_13).sum())
+R_13_calc = np.matmul(R12_est1.T, R23_est1.T).T # because without the .T , it will give R31.
+print((R13_est1 - R_13_calc).sum())
 # As we see, the difference between both is of order 10e-8.
 
 
 
 ## Brainstorm question.
-# R1 orients from Cam1 to Cam2,
-# R2 orients from Cam2 to Cam3.
-# R3 orients from Cam1 to Cam3.
+# R12 orients from Cam1 to Cam2,
+# R23 orients from Cam2 to Cam3.
+# R13 orients from Cam1 to Cam3.
 
-# U are given only R1 and R3 , find R2.
+# U are given only R12 and R13 , find R23.
+# lets put some points before solving.
 
-# print("R2 is ", np.matmul(R3_est1, R13_est1.T), "\n", R2)
+## R13 = R12 * R23 Pre-multiply by R12.T ie R21 we will get,
+## R12.T * R13  = R12.T R12 * R23
+## R12.T * R13  = R23.
+
+
+print("R23 is ", np.matmul(R12.T, R_13_calc), "\n", R13)
 
 
 
@@ -113,36 +119,18 @@ print((R13_est1 - R_13).sum())
 # Lets get cam-centre directions of all cameras from the estimated ts.
 
 
-Cam2_est = -R2_est1.T.dot(t2_est)
+Cam2_est = -R12_est1.T.dot(t12_est)
 Cam3_est = -R13_est1.T.dot(t13_est)
 print("Cam2 \n", Cam2_est, np.allclose(Cam2_est, X_cam2/np.linalg.norm(X_cam2)))
 print("Cam3 \n", Cam3_est, np.allclose(Cam3_est, X_cam3/np.linalg.norm(X_cam3)))
 
-# print("t3-est ", t3_est)
 
-
-
-
-# How do we get Cam3-direction wrt Cam2 ????? 
-# Simple vector addition. ie cam2  + cam23  = cam3.
-Cam23_est = -R2.T.dot(-R3_est1.T.dot(t3_est))
+Cam23_est = -R12.T.dot(-R23_est1.T.dot(t23_est))
 X_cam23 = X_cam3 - X_cam2
 print("Xcam23-norm will be ", (X_cam23/np.linalg.norm(X_cam23) - Cam23_est).sum())
 
 # print("Cam3 wrt cam2 ",Cam23_est, R3_est1.dot(Cam2_est), Cam3_est - Cam2_est )
 
-
-
-# Let's see what will be the dir of Cam3 wrt Cam1.
-# It should actually be 
-
-
-# Previously we saw that, t3_est was dir-vector from Cam2 pointing towards Cam3.
-# Can we get the dir-vec of Cam2 wrt to Cam1.??? 
-# We actually know this dir-vec. This will be norm(X_cam2). 
-# But lets try to get it the other-way around.
-
-# We can get this by -R2_est.transpose * t3_est.
 
 
 
