@@ -30,3 +30,6 @@ def P_from_krt(K, R, t):
 	Rt = np.hstack((R, t))
 	P = np.matmul(K, Rt)
 	return P
+
+def norm(vec):
+	return vec/np.linalg.norm(vec)
