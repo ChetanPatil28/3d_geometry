@@ -3,8 +3,12 @@ import numpy as np
 import utils
 from utils import Camera
 
-np.random.seed(79)
+# np.random.seed(79)
 np.set_printoptions(precision=3)
+
+thetaX = np.random.randint(0, 360)
+thetaY = np.random.randint(0, 360)
+thetaZ = np.random.randint(0, 360)
 
 pts3d_11 = np.random.randint(11, 50, size=(8, 3))  # 8-points
 K = np.load("../camMatrix_720p.npy")
@@ -16,7 +20,7 @@ pts2d_11 = utils.project(Cam11.P, pts3d_11)
 pts2d_11 = utils.hom_to_euc(pts2d_11)
 
 # This is second camera.
-Cam12 = Camera(K, Rc=utils.rotate(thetax=49), center=np.asarray([10, 25, 7]).reshape(3, -1))
+Cam12 = Camera(K, Rc=utils.rotate(thetax=thetaX), center=np.asarray([10, 25, 7]).reshape(3, -1))
 Cam12_R = Cam12.R
 Cam12_c = Cam12.center
 Cam12_t = Cam12.t
@@ -24,7 +28,7 @@ pts2d_12 = utils.project(Cam12.P, pts3d_11)
 pts2d_12 = utils.hom_to_euc(pts2d_12)
 
 # This is third camera.
-Cam13 = Camera(K, Rc=utils.rotate(thetay=68), center=np.asarray([15, 25, 10]).reshape(3, -1))
+Cam13 = Camera(K, Rc=utils.rotate(thetay=thetaY), center=np.asarray([15, 25, 10]).reshape(3, -1))
 Cam13_R = Cam13.R
 Cam13_c = Cam13.center
 Cam13_t = Cam13.t
@@ -50,4 +54,13 @@ pts3d_13 = np.matmul(Cam13.Rt, utils.euc_to_hom(pts3d_11).T)  # [3, N]
 # Well, reverse-transform to get the original points ie P = [R.T | -R.T*t] * P'
 pts3d_11_est = np.matmul(np.hstack((Cam13.R.T, -Cam13.R.T.dot(Cam13.t))), utils.euc_to_hom(pts3d_13.T).T).T
 # Let's see if the estimated and the original are same.
-print("Are both same ", (pts3d_11 - pts3d_11_est).sum())
+print("Switching between different frames ", (pts3d_11 - pts3d_11_est).sum())
+
+# Q2. Given Cam1, 2 and 3 , can you calculate R13 ie orientation of Cam1 wrt Cam3 ?
+# Ans. You need to move from Cam1 to Cam2 and then from Cam2 to Cam3. This gives us `Cam1 wrt Cam3` ie R13.
+print("Estimating Camera orientations 1. -- ",
+      (np.matmul(R23_est1, Cam12.R) - Cam13.R).sum(), (np.matmul(R23_est2, Cam12.R) - Cam13.R).sum())
+
+# Q3. Can you verify if the estimated R23 is correct ?
+# Ans. Move from Cam2 to Cam1 , and them from Cam1 to Cam3. This gives us `Cam2 wrt Cam3` ie R23.
+print("Estimating Camera orientations 2. -- ", (np.matmul(Cam13.R, Cam12.R.T) - R23_est1).sum(), (np.matmul(Cam13.R, Cam12.R.T) - R23_est2).sum())
