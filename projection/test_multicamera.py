@@ -36,13 +36,13 @@ pts2d_13 = utils.project(Cam13.P, pts3d_11)
 pts2d_13 = utils.hom_to_euc(pts2d_13)
 
 Ess12, _ = cv2.findEssentialMat(pts2d_11, pts2d_12, Cam12.K, cv2.FM_RANSAC)
-R12_est1, R12_est2, t12_est = cv2.decomposeEssentialMat(Ess12)
+R12_est1, R12_est2, t12_est = cv2.decomposeEssentialMat(Ess12) # It gives orientation of Cam2 wrt Cam1.
 
 Ess13, _ = cv2.findEssentialMat(pts2d_11, pts2d_13, K, cv2.FM_RANSAC)
-R13_est1, R13_est2, t13_est = cv2.decomposeEssentialMat(Ess13)
+R13_est1, R13_est2, t13_est = cv2.decomposeEssentialMat(Ess13) # It gives orientation of Cam3 wrt Cam1.
 
 Ess23, _ = cv2.findEssentialMat(pts2d_12, pts2d_13, K, cv2.FM_RANSAC)
-R23_est1, R23_est2, t23_est = cv2.decomposeEssentialMat(Ess23)
+R23_est1, R23_est2, t23_est = cv2.decomposeEssentialMat(Ess23) # It gives orientation of Cam3 wrt Cam2.
 
 print("R estimated is equal ???  ", (Cam12_R - R12_est1).sum(), (Cam12_R - R12_est2).sum())
 print("Is the t equal ??? ", (utils.norm(Cam12_t) - t12_est).sum())
