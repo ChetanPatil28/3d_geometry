@@ -10,7 +10,7 @@ thetaX = np.random.randint(0, 360)
 thetaY = np.random.randint(0, 360)
 thetaZ = np.random.randint(0, 360)
 
-pts3d_11 = np.random.randint(11, 50, size=(8, 3))  # 8-points
+pts3d_11 = np.random.randint(11, 50, size=(8, 3)).astype(np.float32) # 8-points
 K = np.load("../camMatrix_720p.npy")
 dist = np.zeros(shape=5)
 
@@ -24,6 +24,7 @@ Cam12 = Camera(K, Rc=utils.rotate(thetax=thetaX), center=np.asarray([10, 25, 7])
 Cam12_R = Cam12.R
 Cam12_c = Cam12.center
 Cam12_t = Cam12.t
+pts3d_12 = np.matmul(Cam12.Rt, utils.euc_to_hom(pts3d_11).T).T
 pts2d_12 = utils.project(Cam12.P, pts3d_11)
 pts2d_12 = utils.hom_to_euc(pts2d_12)
 
@@ -32,8 +33,11 @@ Cam13 = Camera(K, Rc=utils.rotate(thetay=thetaY), center=np.asarray([15, 25, 10]
 Cam13_R = Cam13.R
 Cam13_c = Cam13.center
 Cam13_t = Cam13.t
+pts3d_13 = np.matmul(Cam13.Rt, utils.euc_to_hom(pts3d_11).T).T
 pts2d_13 = utils.project(Cam13.P, pts3d_11)
 pts2d_13 = utils.hom_to_euc(pts2d_13)
+
+# From here on, we shall test the findEssentialMat method.
 
 Ess12, _ = cv2.findEssentialMat(pts2d_11, pts2d_12, Cam12.K, cv2.FM_RANSAC)
 R12_est1, R12_est2, t12_est = cv2.decomposeEssentialMat(Ess12) # It gives orientation of Cam2 wrt Cam1.
@@ -49,10 +53,10 @@ print("Is the t equal ??? ", (utils.norm(Cam12_t) - t12_est).sum())
 
 # Q1. What is the location of the `Points` as seen by the Cam3 ??
 # Ans. P' = [R | t] * P
-pts3d_13 = np.matmul(Cam13.Rt, utils.euc_to_hom(pts3d_11).T)  # [3, N]
+pts3d_13_est = np.matmul(Cam13.Rt, utils.euc_to_hom(pts3d_11).T)  # [3, N]
 # How to verify if the above formula is correct ?.
 # Well, reverse-transform to get the original points ie P = [R.T | -R.T*t] * P'
-pts3d_11_est = np.matmul(np.hstack((Cam13.R.T, -Cam13.R.T.dot(Cam13.t))), utils.euc_to_hom(pts3d_13.T).T).T
+pts3d_11_est = np.matmul(np.hstack((Cam13.R.T, -Cam13.R.T.dot(Cam13.t))), utils.euc_to_hom(pts3d_13_est.T).T).T
 # Let's see if the estimated and the original are same.
 print("Switching between different frames ", (pts3d_11 - pts3d_11_est).sum())
 
@@ -63,4 +67,32 @@ print("Estimating Camera orientations 1. -- ",
 
 # Q3. Can you verify if the estimated R23 is correct ?
 # Ans. Move from Cam2 to Cam1 , and them from Cam1 to Cam3. This gives us `Cam2 wrt Cam3` ie R23.
-print("Estimating Camera orientations 2. -- ", (np.matmul(Cam13.R, Cam12.R.T) - R23_est1).sum(), (np.matmul(Cam13.R, Cam12.R.T) - R23_est2).sum())
+print("Estimating Camera orientations 2. -- ", (np.matmul(Cam13.R, Cam12.R.T) - R23_est1).sum(),
+                                               (np.matmul(Cam13.R, Cam12.R.T) - R23_est2).sum())
+
+
+# From here on, we shall test the solvePnP method.
+# Example-1.
+val, rvec, t11_pnp_est, inliers = cv2.solvePnPRansac(pts3d_11, pts2d_11, K, None, None, None,
+                                                False, 50, 2.0, 0.99, None)
+R11_pnp_est, _ = cv2.Rodrigues(rvec)
+
+# Example-2.
+val, rvec, t12_pnp_est, inliers = cv2.solvePnPRansac(pts3d_11, pts2d_12, K, None, None, None,
+                                                False, 50, 2.0, 0.99, None)
+R12_pnp_est, _ = cv2.Rodrigues(rvec)
+
+# Example-3.
+val, rvec, t13_pnp_est, inliers = cv2.solvePnPRansac(pts3d_11, pts2d_13, K, None, None, None,
+                                                False, 50, 2.0, 0.99, None)
+R13_pnp_est, _ = cv2.Rodrigues(rvec)
+
+print("Solve-PnP Results ", (Cam12.R - R12_pnp_est).sum(),  (Cam12.t - t12_pnp_est).sum())
+
+# Example-4.
+val, rvec, t23_pnp_est, inliers = cv2.solvePnPRansac(pts3d_12, pts2d_13, K, None, None, None,
+                                                False, 50, 2.0, 0.99, None)
+R23_pnp_est, _ = cv2.Rodrigues(rvec)
+
+print("R23 - - - - ", R23_pnp_est, R23_est1)
+print("t23 - - - - ", utils.norm(t23_pnp_est), t23_est)
