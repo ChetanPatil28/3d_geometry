@@ -10,9 +10,27 @@ class Camera:
         self.t = -self.R.dot(self.center)
         self.Rt = np.hstack((self.R, self.t))
         self.P = P_from_krt(self.K, self.R, self.t)
+        self.Rt_inv = np.hstack((self.R.T, -self.R.T.dot(self.t)))
+
 
     def norm(self, vec):
         return vec / np.linalg / norm(vec)
+
+class Trajectory:
+    def __init__(self):
+        self.cameras = []
+        self.cam_locations = []
+
+    def track(self, camera):
+        self.cameras.append(camera)
+        zero_hom = np.zeros((4, 1))
+        zero_hom[-1, :] = 1
+        loc = np.matmul(camera.Rt_inv, zero_hom)
+        self.cam_locations.append(loc)
+
+    def get_cam_locations(self):
+        for cam in self.cam_locations:
+            print("Camera location :- ", cam.flatten())
 
 def rotate(thetax=0, thetay=0, thetaz=0):
     th_x, th_y, th_z = np.deg2rad(thetax), np.deg2rad(thetay), np.deg2rad(thetaz)
