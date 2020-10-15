@@ -96,3 +96,12 @@ R23_pnp_est, _ = cv2.Rodrigues(rvec)
 
 print("R23 - - - - ", R23_pnp_est, R23_est1)
 print("t23 - - - - ", utils.norm(t23_pnp_est), t23_est)
+
+# From now on, we'll check Point-Triangulation
+#
+
+pts4d = cv2.triangulatePoints(Cam11.P, Cam12.P, pts2d_11.T, pts2d_12.T).T
+print("Triangulation 1 ", ((pts4d/pts4d[:, -1].reshape(-1, 1))[:, :-1] - pts3d_11).sum())
+
+pts4d = cv2.triangulatePoints(Cam12.P, Cam13.P, pts2d_12.T, pts2d_13.T).T
+print("Triangulation 2 ", ((pts4d/pts4d[:, -1].reshape(-1, 1))[:, :-1] - pts3d_11).sum())
