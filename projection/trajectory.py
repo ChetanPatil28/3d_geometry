@@ -1,14 +1,14 @@
 import cv2
 import numpy as np
 import utils
-from utils import Camera, Trajectory
+from utils import Camera, TrajectoryFromP, TrajectoryFromPnP
 np.random.seed(79)
 
 # In this file, we will track the movement of cameras from the origin.
 
 K = np.load("../camMatrix_720p.npy")
 dist = np.zeros(shape=5)
-pts3d_11 = np.random.randint(11, 50, size=(8, 3)).astype(np.float32) # 8-points
+pts3d_11 = np.random.randint(11, 50, size=(8, 3)).astype(np.float64) # 8-points
 
 # Q1. Given a set of Project-Matrices, can you find the location of each Cameras wrt World ?
 
@@ -27,7 +27,7 @@ Cam4 = Camera(K, Rc=utils.rotate(), center=np.asarray([0, 15, 40]).reshape(3, -1
 # Basically, in order to get the cam-location, we just need to do { P_inv() * [0].T } or simply { -R.inv() * t }
 
 # We'll use the trajectory class.
-traject1 = Trajectory()
+traject1 = TrajectoryFromP()
 traject1.track(Cam2)
 traject1.track(Cam3)
 traject1.track(Cam4)
@@ -39,7 +39,7 @@ Cam2 = Camera(K, Rc=utils.rotate(thetax=45), center=np.asarray([10, 25, 7]).resh
 Cam3 = Camera(K, Rc=utils.rotate(thetay=169), center=np.asarray([15, 35, 11]).reshape(3, -1))
 Cam4 = Camera(K, Rc=utils.rotate(thetaz=90), center=np.asarray([0, 15, 40]).reshape(3, -1))
 
-traject2 = Trajectory()
+traject2 = TrajectoryFromP()
 traject2.track(Cam2)
 traject2.track(Cam3)
 traject2.track(Cam4)
@@ -47,6 +47,19 @@ traject2.get_cam_locations()
 
 # As we see, both the test cases yielded the same centers as defined in the above code.
 # Now, lets move to a bit difficult problem.
+
 # Q2. Given N 3D points, and their corresponding 2D points as seen by different cameras.
 # can you get the trajectory in the order of the given points ?
+# Following are the points.
+pts2d_12 = utils.project(Cam2.P, pts3d_11)
+pts2d_13 = utils.project(Cam3.P, pts3d_11)
+pts2d_14 = utils.project(Cam4.P, pts3d_11)
+
+# Ans. You can estimate the R and t from P-n-P.
+t3 = TrajectoryFromPnP(K, pts3d_11)
+t3.track_points(utils.hom_to_euc(pts2d_12))
+t3.track_points(utils.hom_to_euc(pts2d_13))
+t3.track_points(utils.hom_to_euc(pts2d_14))
+t3.get_cam_locations()
+
 

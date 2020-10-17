@@ -83,6 +83,7 @@ val, rvec, t12_pnp_est, inliers = cv2.solvePnPRansac(pts3d_11, pts2d_12, K, None
 R12_pnp_est, _ = cv2.Rodrigues(rvec)
 
 # Example-3.
+
 val, rvec, t13_pnp_est, inliers = cv2.solvePnPRansac(pts3d_11, pts2d_13, K, None, None, None,
                                                 False, 50, 2.0, 0.99, None)
 R13_pnp_est, _ = cv2.Rodrigues(rvec)

@@ -16,7 +16,7 @@ class Camera:
     def norm(self, vec):
         return vec / np.linalg / norm(vec)
 
-class Trajectory:
+class TrajectoryFromP:
     def __init__(self):
         self.cameras = []
         self.cam_locations = []
@@ -31,6 +31,25 @@ class Trajectory:
     def get_cam_locations(self):
         for cam in self.cam_locations:
             print("Camera location :- ", cam.flatten())
+
+class TrajectoryFromPnP:
+    def __init__(self, K, points3D):
+        self.points3D = points3D
+        self.K = K
+        self.cam_locs = []
+
+    def track_points(self, points2D):
+        val, rvec, t, inliers = cv2.solvePnPRansac(self.points3D, points2D, self.K, None, None, None,
+                                                             False, 50, 2.0, 0.99, None)
+        R, _ = cv2.Rodrigues(rvec)
+        cam_loc = -R.T.dot(t)
+        self.cam_locs.append(cam_loc)
+
+    def get_cam_locations(self):
+        for cam in self.cam_locs:
+            print("Camera location :- ", cam.flatten())
+
+
 
 def rotate(thetax=0, thetay=0, thetaz=0):
     th_x, th_y, th_z = np.deg2rad(thetax), np.deg2rad(thetay), np.deg2rad(thetaz)
