@@ -1,4 +1,4 @@
-# 3d_geometry
+# My Experiments with 3D-Geometry
 
 This repo includes my personal notes on 3D Geometry.
 It consists of 

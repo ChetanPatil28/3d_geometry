@@ -40,13 +40,18 @@ pts2d_13 = utils.hom_to_euc(pts2d_13)
 # From here on, we shall test the findEssentialMat method.
 
 Ess12, _ = cv2.findEssentialMat(pts2d_11, pts2d_12, Cam12.K, cv2.FM_RANSAC)
-R12_est1, R12_est2, t12_est = cv2.decomposeEssentialMat(Ess12) # It gives orientation of Cam2 wrt Cam1.
+R12_est1, R12_est2, t12_est = cv2.decomposeEssentialMat(Ess12) # It gives orientation of Cam1 wrt Cam2.
+# bascially the above R and t will bring a point (represented in cam1)  to ( its representation in) Cam2.
 
 Ess13, _ = cv2.findEssentialMat(pts2d_11, pts2d_13, K, cv2.FM_RANSAC)
-R13_est1, R13_est2, t13_est = cv2.decomposeEssentialMat(Ess13) # It gives orientation of Cam3 wrt Cam1.
+R13_est1, R13_est2, t13_est = cv2.decomposeEssentialMat(Ess13) # It gives orientation of Cam1 wrt Cam3.
+# bascially the above R and t will bring a point (represented in cam1)  to ( its representation in) Cam3.
+
 
 Ess23, _ = cv2.findEssentialMat(pts2d_12, pts2d_13, K, cv2.FM_RANSAC)
-R23_est1, R23_est2, t23_est = cv2.decomposeEssentialMat(Ess23) # It gives orientation of Cam3 wrt Cam2.
+R23_est1, R23_est2, t23_est = cv2.decomposeEssentialMat(Ess23) # It gives orientation of Cam2 wrt Cam3.
+# bascially the above R and t will bring a point (represented in cam2)  to ( its representation in) Cam3.
+
 
 print("R estimated is equal ???  ", (Cam12_R - R12_est1).sum(), (Cam12_R - R12_est2).sum())
 print("Is the t equal ??? ", (utils.norm(Cam12_t) - t12_est).sum())
@@ -106,3 +111,4 @@ print("Triangulation 1 ", ((pts4d/pts4d[:, -1].reshape(-1, 1))[:, :-1] - pts3d_1
 
 pts4d = cv2.triangulatePoints(Cam12.P, Cam13.P, pts2d_12.T, pts2d_13.T).T
 print("Triangulation 2 ", ((pts4d/pts4d[:, -1].reshape(-1, 1))[:, :-1] - pts3d_11).sum())
+
