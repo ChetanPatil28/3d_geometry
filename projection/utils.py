@@ -82,4 +82,4 @@ def P_from_krt(K, R, t):
     return P
 
 def norm(vec):
-    return vec/np.linalg.norm(vec)
+    return vec/(np.linalg.norm(vec) + 1e-6)
