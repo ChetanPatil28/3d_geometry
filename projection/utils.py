@@ -72,7 +72,7 @@ def euc_to_hom(points): # (N, 2 or 3)
 
 def hom_to_euc(points): # (N, 3 or 4)
     last = points[:, -1].copy()
-    points_euc = points/last[:, None]
+    points_euc = points/(last[:, None] + 1e-7)
     return points_euc[:, :-1]
 
 
